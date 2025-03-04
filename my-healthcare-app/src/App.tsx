@@ -194,9 +194,10 @@ const Home: React.FC = () => {
             <div>
               <h4 className="font-semibold mb-4">Connect With Us</h4>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-twitter text-xl"></i></a>
-                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-facebook text-xl"></i></a>
-                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-linkedin text-xl"></i></a>
+                <a className="text-gray-600 hover:text-blue-500"><i className="fab fa-twitter text-xl"></i></a>
+                <a className="text-gray-600 hover:text-blue-500"><i className="fab fa-facebook text-xl"></i></a>
+                <a className="text-gray-600 hover:text-blue-500"><i className="fab fa-linkedin text-xl"></i></a>
+                <a className="text-gray-600 hover:text-blue-500"><i className="fab fa-instagram text-xl"></i></a>
               </div>
             </div>
           </div>
