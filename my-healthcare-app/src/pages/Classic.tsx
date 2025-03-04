@@ -17,7 +17,6 @@ const App: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [duration, setDuration] = useState('');
     const [severity, setSeverity] = useState(5);
-    const [showSeverityDropdown, setShowSeverityDropdown] = useState(false);
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
     const [conditions, setConditions] = useState<Condition[]>([]);
