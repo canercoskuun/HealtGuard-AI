@@ -170,7 +170,7 @@ const App: React.FC = () => {
                                 className="w-full px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-lg focus:outline-none cursor-pointer !rounded-button"
                             >
                                 {duration || 'Select duration'}
-                                <i className="fas fa-angle-down absolute right-4 top-1/2 transform -translate-y-1/2"></i>
+
                             </button>
                             {showDurationDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
@@ -222,7 +222,10 @@ const App: React.FC = () => {
                                 className="w-full px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-lg focus:outline-none cursor-pointer !rounded-button"
                             >
                                 {gender || 'Select gender'}
-                                <i className="fas fa-angle-down absolute right-4 top-1/2 transform -translate-y-1/2"></i>
+
+
+
+
                             </button>
                             {showGenderDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
