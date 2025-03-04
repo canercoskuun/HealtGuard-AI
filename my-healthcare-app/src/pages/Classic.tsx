@@ -1,183 +1,199 @@
 // The exported code uses Tailwind CSS. Install Tailwind CSS in your dev environment to ensure all styles work.
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import * as echarts from 'echarts';
+interface Symptom {
+    id: string;
+    name: string;
+}
+interface Condition {
+    name: string;
+    match: number;
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+}
 const App: React.FC = () => {
-    const [symptoms, setSymptoms] = useState<string[]>([]);
-    const [inputValue, setInputValue] = useState('');
+    const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [duration, setDuration] = useState('');
     const [severity, setSeverity] = useState(5);
+    const [showSeverityDropdown, setShowSeverityDropdown] = useState(false);
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
-    const [conditions, setConditions] = useState('');
+    const [conditions, setConditions] = useState<Condition[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [showResults, setShowResults] = useState(false);
     const [showGenderDropdown, setShowGenderDropdown] = useState(false);
     const [showDurationDropdown, setShowDurationDropdown] = useState(false);
-    const chartRef = useRef<HTMLDivElement>(null);
     const commonSymptoms = [
         'Headache', 'Fever', 'Cough', 'Fatigue', 'Nausea',
-        'Dizziness', 'Shortness of breath', 'Body aches', 'Sore throat'
+        'Dizziness', 'Chest Pain', 'Shortness of Breath', 'Back Pain',
+        'Joint Pain', 'Muscle Aches', 'Sore Throat'
     ];
-    const suggestedSymptoms = commonSymptoms.filter(
-        symptom => symptom.toLowerCase().includes(inputValue.toLowerCase()) && inputValue
+    const suggestedSymptoms = commonSymptoms.filter(symptom =>
+        symptom.toLowerCase().includes(searchTerm.toLowerCase()) && searchTerm
     );
-    useEffect(() => {
-        if (showResults && chartRef.current) {
-            const chart = echarts.init(chartRef.current);
-            const option = {
-                animation: false,
-                title: {
-                    text: 'Condition Match Analysis',
-                    left: 'center',
-                    top: 20,
-                    textStyle: {
-                        color: '#334155'
-                    }
-                },
-                tooltip: {
-                    trigger: 'item'
-                },
-                series: [
-                    {
-                        name: 'Match Probability',
-                        type: 'pie',
-                        radius: ['40%', '70%'],
-                        avoidLabelOverlap: false,
-                        itemStyle: {
-                            borderRadius: 10,
-                            borderColor: '#fff',
-                            borderWidth: 2
-                        },
-                        label: {
-                            show: false,
-                            position: 'center'
-                        },
-                        emphasis: {
-                            label: {
-                                show: true,
-                                fontSize: 20,
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labelLine: {
-                            show: false
-                        },
-                        data: [
-                            { value: 48, name: 'Common Cold' },
-                            { value: 32, name: 'Seasonal Allergies' },
-                            { value: 20, name: 'Sinusitis' }
-                        ]
-                    }
-                ]
-            };
-            chart.setOption(option);
-        }
-    }, [showResults]);
-    const handleAddSymptom = (symptom: string) => {
-        if (!symptoms.includes(symptom) && symptom.trim()) {
-            setSymptoms([...symptoms, symptom]);
-            setInputValue('');
+    const addSymptom = (symptomName: string) => {
+        if (!symptoms.find(s => s.name === symptomName)) {
+            setSymptoms([...symptoms, { id: Date.now().toString(), name: symptomName }]);
+            setSearchTerm('');
         }
     };
-    const handleRemoveSymptom = (symptomToRemove: string) => {
-        setSymptoms(symptoms.filter(symptom => symptom !== symptomToRemove));
+    const removeSymptom = (id: string) => {
+        setSymptoms(symptoms.filter(s => s.id !== id));
     };
-    const handleAnalyze = () => {
+    const analyzeSymptoms = () => {
+        if (symptoms.length === 0) return;
         setIsAnalyzing(true);
         setTimeout(() => {
+            const mockConditions: Condition[] = [
+                {
+                    name: 'Common Cold',
+                    match: 85,
+                    severity: 'low',
+                    description: 'A viral infection causing runny nose, sore throat, and cough.'
+                },
+                {
+                    name: 'Seasonal Allergies',
+                    match: 72,
+                    severity: 'low',
+                    description: 'Allergic reaction to environmental factors like pollen or dust.'
+                },
+                {
+                    name: 'Migraine',
+                    match: 65,
+                    severity: 'medium',
+                    description: 'Severe headache often accompanied by sensitivity to light and nausea.'
+                }
+            ];
+            setConditions(mockConditions);
             setIsAnalyzing(false);
-            setShowResults(true);
         }, 2000);
     };
-    const handleClear = () => {
+    const clearAll = () => {
         setSymptoms([]);
-        setInputValue('');
+        setSearchTerm('');
         setDuration('');
-        setSeverity(5);
+        setSeverity(1);
         setAge('');
         setGender('');
-        setConditions('');
-        setShowResults(false);
+        setConditions([]);
     };
+    useEffect(() => {
+        if (conditions.length > 0) {
+            const chartDom = document.getElementById('analysisChart');
+            if (chartDom) {
+                const myChart = echarts.init(chartDom);
+                const option = {
+                    animation: false,
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c}% Match'
+                    },
+                    color: ['#EF4444', '#F59E0B', '#3B82F6'],
+                    series: [
+                        {
+                            name: 'Match Percentage',
+                            type: 'pie',
+                            radius: ['50%', '70%'],
+                            avoidLabelOverlap: false,
+                            itemStyle: {
+                                borderRadius: 10,
+                                borderColor: '#fff',
+                                borderWidth: 2
+                            },
+                            label: {
+                                show: true,
+                                position: 'outside',
+                                formatter: '{b}\n{c}%'
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: 16,
+                                    fontWeight: 'bold'
+                                }
+                            },
+                            data: conditions.map((c, index) => ({
+                                value: c.match,
+                                name: c.name
+                            }))
+                        }
+                    ]
+                };
+                myChart.setOption(option);
+            }
+        }
+    }, [conditions]);
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-6xl mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <div className="inline-block text-blue-600 mb-4">
-                        <i className="fas fa-stethoscope text-5xl"></i>
+                <header className="text-center mb-12">
+                    <div className="flex flex-col items-center justify-center mb-4">
+                        <i className="fas fa-stethoscope text-4xl text-blue-600 mb-2"></i>
+                        <h1 className="text-4xl font-bold text-gray-800">Symptom Checker</h1>
                     </div>
-                    <h1 className="text-4xl font-bold text-gray-800 mb-4">Symptom Checker</h1>
                     <p className="text-xl text-gray-600">Enter your symptoms to get possible conditions</p>
-                </div>
-                {/* Main Content */}
+                </header>
                 <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-                    {/* Symptom Input */}
-                    <div className="mb-8">
+                    <div className="relative mb-6">
                         <div className="relative">
                             <input
                                 type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Type your symptoms here..."
-                                className="w-full px-6 py-4 text-lg border-2 border-blue-100 rounded-lg focus:outline-none focus:border-blue-500"
+                                className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 text-gray-700"
                             />
-                            <button
-                                onClick={() => handleAddSymptom(inputValue)}
-                                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800 cursor-pointer !rounded-button"
-                            >
-                                <i className="fas fa-plus text-xl"></i>
-                            </button>
+                            <i className="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        {/* Suggested Symptoms */}
-                        {suggestedSymptoms.length > 0 && inputValue && (
-                            <div className="mt-2 bg-white shadow-lg rounded-lg border border-gray-200">
+                        {suggestedSymptoms.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                                 {suggestedSymptoms.map((symptom) => (
                                     <div
                                         key={symptom}
-                                        className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
-                                        onClick={() => handleAddSymptom(symptom)}
+                                        className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                                        onClick={() => addSymptom(symptom)}
                                     >
                                         {symptom}
                                     </div>
                                 ))}
                             </div>
                         )}
-                        {/* Selected Symptoms */}
-                        <div className="flex flex-wrap gap-2 mt-4">
-                            {symptoms.map((symptom) => (
-                                <div
-                                    key={symptom}
-                                    className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full flex items-center"
-                                >
-                                    {symptom}
-                                    <button
-                                        onClick={() => handleRemoveSymptom(symptom)}
-                                        className="ml-2 text-blue-600 hover:text-blue-800 cursor-pointer !rounded-button"
-                                    >
-                                        <i className="fas fa-xmark"></i>
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
                     </div>
-                    {/* Additional Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div className="relative">
-                            <label className="block text-gray-700 mb-2">Duration</label>
-                            <button
-                                onClick={() => setShowDurationDropdown(!showDurationDropdown)}
-                                className="w-full px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-lg focus:outline-none cursor-pointer !rounded-button"
+                    <div className="flex flex-wrap gap-2 mb-6">
+                        {symptoms.map((symptom) => (
+                            <div
+                                key={symptom.id}
+                                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center"
                             >
-                                {duration || 'Select duration'}
-
-                            </button>
+                                <span>{symptom.name}</span>
+                                <button
+                                    onClick={() => removeSymptom(symptom.id)}
+                                    className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                    <i className="fas fa-times"></i>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div className="relative">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                                <button
+                                    onClick={() => setShowDurationDropdown(!showDurationDropdown)}
+                                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg text-left text-gray-700 focus:outline-none focus:border-blue-500 cursor-pointer relative"
+                                >
+                                    {duration || 'How long have you had these symptoms?'}
+                                    <i className="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center h-4"></i>
+                                </button>
+                            </div>
                             {showDurationDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                                     {['Less than a day', '1-3 days', '4-7 days', 'More than a week'].map((option) => (
                                         <div
                                             key={option}
-                                            className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                                            className="px-4 py-2 cursor-pointer hover:bg-blue-50"
                                             onClick={() => {
                                                 setDuration(option);
                                                 setShowDurationDropdown(false);
@@ -190,49 +206,51 @@ const App: React.FC = () => {
                             )}
                         </div>
                         <div>
-                            <label className="block text-gray-700 mb-2">Severity (1-10)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Severity (1-10)</label>
                             <input
                                 type="range"
                                 min="1"
                                 max="10"
                                 value={severity}
                                 onChange={(e) => setSeverity(parseInt(e.target.value))}
-                                className="w-full"
+                                className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
                             />
-                            <div className="flex justify-between text-gray-600">
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>Mild</span>
                                 <span>Moderate</span>
                                 <span>Severe</span>
                             </div>
                         </div>
                         <div>
-                            <label className="block text-gray-700 mb-2">Age</label>
                             <input
                                 type="number"
                                 value={age}
-                                onChange={(e) => setAge(e.target.value)}
-                                placeholder="Enter your age"
-                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none"
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= 120)) {
+                                        setAge(value);
+                                    }
+                                }}
+                                min="0"
+                                max="120"
+                                placeholder="Age"
+                                className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                         </div>
                         <div className="relative">
-                            <label className="block text-gray-700 mb-2">Gender</label>
                             <button
                                 onClick={() => setShowGenderDropdown(!showGenderDropdown)}
-                                className="w-full px-4 py-3 text-left bg-white border-2 border-gray-200 rounded-lg focus:outline-none cursor-pointer !rounded-button"
+                                className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg text-left text-gray-700 focus:outline-none focus:border-blue-500 cursor-pointer"
                             >
-                                {gender || 'Select gender'}
-
-
-
-
+                                {gender || 'Select Gender'}
+                                <i className="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center h-4"></i>
                             </button>
                             {showGenderDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                                     {['Male', 'Female', 'Other'].map((option) => (
                                         <div
                                             key={option}
-                                            className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                                            className="px-4 py-2 cursor-pointer hover:bg-blue-50"
                                             onClick={() => {
                                                 setGender(option);
                                                 setShowGenderDropdown(false);
@@ -245,82 +263,68 @@ const App: React.FC = () => {
                             )}
                         </div>
                     </div>
-                    {/* Action Buttons */}
-                    <div className="flex gap-4 justify-center mb-8">
+                    <div className="flex gap-4">
                         <button
-                            onClick={handleAnalyze}
+                            onClick={analyzeSymptoms}
                             disabled={symptoms.length === 0 || isAnalyzing}
-                            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center !rounded-button whitespace-nowrap"
+                            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-blue-300 !rounded-button whitespace-nowrap cursor-pointer"
                         >
                             {isAnalyzing ? (
-                                <>
-                                    <i className="fas fa-circle-notch fa-spin mr-2"></i>
+                                <span className="flex items-center justify-center">
+                                    <i className="fas fa-spinner fa-spin mr-2"></i>
                                     Analyzing...
-                                </>
+                                </span>
                             ) : (
                                 'Analyze Symptoms'
                             )}
                         </button>
                         <button
-                            onClick={handleClear}
-                            className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 !rounded-button whitespace-nowrap"
+                            onClick={clearAll}
+                            className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 transition-colors !rounded-button whitespace-nowrap cursor-pointer"
                         >
                             Clear All
                         </button>
                     </div>
-                    {/* Results Section */}
-                    {showResults && (
-                        <div className="border-t pt-8">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Analysis Results</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div ref={chartRef} className="h-80"></div>
-                                <div>
-                                    <h3 className="text-xl font-semibold mb-4">Possible Conditions</h3>
-                                    <div className="space-y-4">
-                                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-medium">Common Cold</span>
-                                                <span className="text-green-600">48% match</span>
-                                            </div>
-                                            <p className="text-sm text-gray-600">
-                                                Matches symptoms: Cough, Sore throat, Fatigue
-                                            </p>
+                </div>
+                {conditions.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Analysis Results</h2>
+                        <div className="flex gap-8 mt-2">
+                            <div id="analysisChart" className="w-1/2 h-[400px]"></div>
+                            <div className="w-1/2 space-y-4 max-h-[400px] overflow-y-auto">
+                                {conditions.map((condition, index) => (
+                                    <div
+                                        key={condition.name}
+                                        className="border border-gray-200 rounded-lg p-4"
+                                        style={{
+                                            borderColor: index === 0 ? '#EF4444' : index === 1 ? '#F59E0B' : '#3B82F6'
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-xl font-semibold" style={{
+                                                color: index === 0 ? '#EF4444' : index === 1 ? '#F59E0B' : '#3B82F6'
+                                            }}>{condition.name}</h3>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${index === 0 ? 'bg-red-100 text-red-800' :
+                                                index === 1 ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                {condition.severity.charAt(0).toUpperCase() + condition.severity.slice(1)} Risk
+                                            </span>
                                         </div>
-                                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-medium">Seasonal Allergies</span>
-                                                <span className="text-blue-600">32% match</span>
-                                            </div>
-                                            <p className="text-sm text-gray-600">
-                                                Matches symptoms: Cough, Shortness of breath
-                                            </p>
-                                        </div>
-                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="font-medium">Sinusitis</span>
-                                                <span className="text-yellow-600">20% match</span>
-                                            </div>
-                                            <p className="text-sm text-gray-600">
-                                                Matches symptoms: Headache, Fatigue
-                                            </p>
-                                        </div>
+                                        <p className="text-gray-600">{condition.description}</p>
                                     </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
-                    )}
-                </div>
-                {/* Disclaimer */}
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-                    <h3 className="text-xl font-bold text-red-800 mb-4">Important Medical Disclaimer</h3>
-                    <p className="text-red-700 mb-4">
-                        This symptom checker is for informational purposes only and should not be used as a substitute
-                        for professional medical advice, diagnosis, or treatment.
-                    </p>
-                    <p className="text-red-700 font-bold">
-                        If you are experiencing severe symptoms or believe you have a medical emergency,
-                        please call emergency services (911) or visit the nearest emergency room immediately.
-                    </p>
+                    </div>
+                )}
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6">
+                    <div className="flex items-start">
+                        <i className="fas fa-exclamation-circle text-red-600 text-2xl mt-1 mr-4"></i>
+                        <p className="text-red-700 text-lg">
+                            This symptom checker is for informational purposes only and should not be used as a substitute for professional medical advice, diagnosis, or treatment.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
