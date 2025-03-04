@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 interface Message {
     text: string;
     isBot: boolean;

@@ -1,265 +1,327 @@
 // The exported code uses Tailwind CSS. Install Tailwind CSS in your dev environment to ensure all styles work.
-
 import React, { useState } from 'react';
+import * as echarts from 'echarts';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Chatbot from './pages/Chatbot';
 import Classic from './pages/Classic';
-
+interface User {
+  email: string;
+  password: string;
+  name?: string;
+}
 const Home: React.FC = () => {
-  const [isHoveringClassic, setIsHoveringClassic] = useState(false);
-  const [isHoveringChatbot, setIsHoveringChatbot] = useState(false);
-  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [activeButton, setActiveButton] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [formData, setFormData] = useState<User>({
+    email: '',
+    password: '',
+    name: '',
+  });
   const navigate = useNavigate();
 
   const handleNavigate = (path: string) => {
     navigate(path);
   };
-
+  const [errors, setErrors] = useState<Partial<User>>({});
+  const handleButtonHover = (buttonId: string) => {
+    setActiveButton(buttonId);
+  };
+  const handleButtonLeave = () => {
+    setActiveButton(null);
+  };
+  const validateForm = () => {
+    const newErrors: Partial<User> = {};
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (!isLogin && !formData.name) {
+      newErrors.name = 'Name is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      // Here you would typically make an API call to handle authentication
+      console.log('Form submitted:', formData);
+      setShowAuth(false);
+      setFormData({ email: '', password: '', name: '' });
+      setIsLoggedIn(true);
+    }
+  };
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setFormData({ email: '', password: '', name: '' });
+  };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
+    if (errors[name as keyof User]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="relative h-[600px] w-full overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://public.readdy.ai/ai/img_res/bef04168fce08ad306a90a2611ab0bab.jpg')",
-          }}
-
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-white/90 to-white/20"></div>
-        </div>
-
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white">
+      {/* Hero Background */}
+      <div
+        className="absolute top-0 left-0 w-full h-[800px] bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://public.readdy.ai/ai/img_res/d46ba79098e922ca98af2b877d26df11.jpg')`,
+          backgroundBlendMode: 'overlay',
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/80 to-white"></div>
+      </div>
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4">
         {/* Header */}
-        <header className="relative z-10 flex items-center justify-between px-20 py-6">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-heartbeat text-3xl text-blue-600"></i>
-            <span className="text-2xl font-bold text-gray-800">HealthGuard AI</span>
+        <header className="py-6 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center">
+              <i className="fas fa-heartbeat text-3xl text-white"></i>
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-800">HealthGuard AI</h1>
           </div>
-          <nav className="flex items-center gap-8">
-            <button className="text-gray-600 hover:text-blue-600 transition-colors">About</button>
-            <button className="text-gray-600 hover:text-blue-600 transition-colors">Services</button>
-            <button className="text-gray-600 hover:text-blue-600 transition-colors">Contact</button>
-            <button
-              className="!rounded-button bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
-              onClick={() => setShowEmergencyModal(true)}
-            >
-              Emergency Help
-            </button>
+          <nav className="flex items-center space-x-6">
+            <a href="#about" onClick={(e) => {
+              e.preventDefault();
+              document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' });
+            }} className="text-gray-600 hover:text-blue-600 transition-colors duration-200">About</a>
+            <a href="#contact" onClick={(e) => {
+              e.preventDefault();
+              document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' });
+            }} className="text-gray-600 hover:text-blue-600 transition-colors duration-200">Contact</a>
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-500 text-white !rounded-button whitespace-nowrap hover:bg-red-600 transition-colors duration-200"
+              >
+                Log Out
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-4 py-2 bg-blue-500 text-white !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors duration-200"
+              >
+                Log In
+              </button>
+            )}
           </nav>
         </header>
-
-        {/* Hero Content */}
-        <div className="relative z-10 px-20 mt-20">
-          <h1 className="text-5xl font-bold text-gray-800 max-w-2xl leading-tight">
-            Advanced AI-Powered Health Diagnosis at Your Fingertips
-          </h1>
-          <p className="mt-6 text-xl text-gray-600 max-w-2xl">
-            Get instant health insights based on your symptoms using our cutting-edge diagnostic tools. Choose your preferred method below for a personalized health assessment.
-          </p>
-        </div>
-      </div>
-
-      {/* Main Options */}
-      <div className="px-20 py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-            Choose Your Diagnosis Method
-          </h2>
-          <div className="grid grid-cols-2 gap-8">
-            <div
-              className={`relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg transition-all duration-300 cursor-pointer ${isHoveringClassic ? 'transform -translate-y-2' : ''
+        {/* Hero Section */}
+        <main className="mt-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">How would you like to check your symptoms?</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Get instant health insights using our advanced diagnostic tools. Choose your preferred method below.
+            </p>
+          </div>
+          {/* Main Buttons */}
+          <div className="max-w-md mx-auto space-y-6">
+            <button
+              className={`w-full p-6 bg-blue-500 text-white !rounded-button whitespace-nowrap flex items-center justify-center space-x-4 transition-all duration-300 ${activeButton === 'classic' ? 'transform scale-105' : ''
                 }`}
-              onMouseEnter={() => setIsHoveringClassic(true)}
-              onMouseLeave={() => setIsHoveringClassic(false)}
+              onMouseEnter={() => handleButtonHover('classic')}
+              onMouseLeave={handleButtonLeave}
               onClick={() => handleNavigate('/classic')}
             >
-              <div className="flex items-start gap-6">
-                <div className="rounded-full bg-blue-100 p-4">
-                  <i className="fas fa-clipboard-list text-2xl text-blue-600"></i>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">Classic Model</h3>
-                  <p className="text-gray-600 mb-4">
-                    Traditional symptom-based diagnosis using our comprehensive medical database. Perfect for systematic health assessment.
-                  </p>
-                  <button className="!rounded-button flex items-center gap-2 bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 transition-colors whitespace-nowrap">
-                    Start Diagnosis
-                    <i className="fas fa-arrow-right"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg transition-all duration-300 cursor-pointer ${isHoveringChatbot ? 'transform -translate-y-2' : ''
+              <i className="fas fa-clipboard-list text-2xl"></i>
+              <span className="text-xl font-semibold">Classic Model</span>
+            </button>
+            <button
+              className={`w-full p-6 bg-teal-600 text-white !rounded-button whitespace-nowrap flex items-center justify-center space-x-4 transition-all duration-300 ${activeButton === 'chatbot' ? 'transform scale-105' : ''
                 }`}
-              onMouseEnter={() => setIsHoveringChatbot(true)}
-              onMouseLeave={() => setIsHoveringChatbot(false)}
+              onMouseEnter={() => handleButtonHover('chatbot')}
+              onMouseLeave={handleButtonLeave}
               onClick={() => handleNavigate('/chatbot')}
             >
-              <div className="flex items-start gap-6">
-                <div className="rounded-full bg-green-100 p-4">
-                  <i className="fas fa-robot text-2xl text-green-600"></i>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">AI Chatbot</h3>
-                  <p className="text-gray-600 mb-4">
-                    Interactive conversation with our advanced AI system. Natural dialogue for personalized health guidance.
-                  </p>
-                  <button className="!rounded-button flex items-center gap-2 bg-green-600 px-6 py-3 text-white hover:bg-green-700 transition-colors whitespace-nowrap">
-                    Chat Now
-                    <i className="fas fa-comment-dots"></i>
-                  </button>
-                </div>
-              </div>
+              <i className="fas fa-robot text-2xl"></i>
+              <span className="text-xl font-semibold">Try Chatbot</span>
+            </button>
+          </div>
+          {/* Features Section */}
+          <div className="mt-32 grid grid-cols-3 gap-8 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-white to-blue-50/50 rounded-3xl transform -skew-y-2"></div>
+            <div className="p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg relative z-10 hover:transform hover:scale-105 transition-transform duration-300">
+              <i className="fas fa-brain text-4xl text-blue-500 mb-4"></i>
+              <h3 className="text-xl font-semibold mb-3">AI-Powered Analysis</h3>
+              <p className="text-gray-600">Advanced algorithms analyze your symptoms for accurate health insights.</p>
+            </div>
+            <div className="p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg relative z-10 hover:transform hover:scale-105 transition-transform duration-300">
+              <i className="fas fa-user-md text-4xl text-blue-500 mb-4"></i>
+              <h3 className="text-xl font-semibold mb-3">Medical Expertise</h3>
+              <p className="text-gray-600">Backed by professional medical knowledge and latest research.</p>
+            </div>
+            <div className="p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg relative z-10 hover:transform hover:scale-105 transition-transform duration-300">
+              <i className="fas fa-shield-alt text-4xl text-blue-500 mb-4"></i>
+              <h3 className="text-xl font-semibold mb-3">Privacy First</h3>
+              <p className="text-gray-600">Your health data is encrypted and protected with industry standards.</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="px-20 py-16">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-            Why Choose HealthGuard AI?
-          </h2>
+        </main>
+        {/* Footer */}
+        <footer className="mt-32 py-8 border-t border-gray-200" id="about">
           <div className="grid grid-cols-3 gap-8">
-            {[
-              {
-                icon: 'fa-brain',
-                title: 'Advanced AI Technology',
-                description: 'Powered by cutting-edge artificial intelligence for accurate diagnosis'
-              },
-              {
-                icon: 'fa-shield-alt',
-                title: 'Privacy Protected',
-                description: 'Your health data is encrypted and secured with military-grade protection'
-              },
-              {
-                icon: 'fa-clock',
-                title: '24/7 Availability',
-                description: 'Access healthcare insights anytime, anywhere with instant responses'
-              }
-            ].map((feature, index) => (
-              <div key={index} className="text-center p-6">
-                <div className="inline-block rounded-full bg-blue-100 p-4 mb-4">
-                  <i className={`fas ${feature.icon} text-2xl text-blue-600`}></i>
-                </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-3">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white px-20 py-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center gap-3 mb-6">
-                <i className="fas fa-heartbeat text-2xl text-blue-400"></i>
-                <span className="text-xl font-bold">HealthGuard AI</span>
-              </div>
-              <p className="text-gray-400">
-                Leading the future of healthcare with AI-powered diagnosis and personalized health insights.
-              </p>
+              <h4 className="font-semibold mb-4">About Us</h4>
+              <p className="text-gray-600">HealthGuard AI is a cutting-edge healthcare technology company dedicated to making healthcare more accessible and efficient through artificial intelligence. Our mission is to empower individuals with instant, accurate health insights while maintaining the highest standards of privacy and security.</p>
             </div>
             <div>
-              <h4 className="text-lg font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><button className="hover:text-blue-400 transition-colors">About Us</button></li>
-                <li><button className="hover:text-blue-400 transition-colors">Services</button></li>
-                <li><button className="hover:text-blue-400 transition-colors">Contact</button></li>
-                <li><button className="hover:text-blue-400 transition-colors">Blog</button></li>
+              <h4 className="font-semibold mb-4" id="contact">Contact Us</h4>
+              <ul className="space-y-2 text-gray-600">
+                <li><i className="fas fa-envelope mr-2"></i>support@healthguard.ai</li>
+                <li><i className="fas fa-phone mr-2"></i>+1 (800) HEALTH</li>
+                <li><i className="fas fa-map-marker-alt mr-2"></i>123 Innovation Drive, Silicon Valley, CA 94025</li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><button className="hover:text-blue-400 transition-colors">Privacy Policy</button></li>
-                <li><button className="hover:text-blue-400 transition-colors">Terms of Service</button></li>
-                <li><button className="hover:text-blue-400 transition-colors">Cookie Policy</button></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-bold mb-4">Emergency Contact</h4>
-              <p className="text-gray-400">24/7 Emergency Hotline</p>
-              <p className="text-xl font-bold text-blue-400">1-800-HEALTH-AI</p>
-              <div className="mt-4 flex gap-4">
-                <button className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <i className="fab fa-twitter text-xl"></i>
-                </button>
-                <button className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <i className="fab fa-facebook text-xl"></i>
-                </button>
-                <button className="text-gray-400 hover:text-blue-400 transition-colors">
-                  <i className="fab fa-linkedin text-xl"></i>
-                </button>
+              <h4 className="font-semibold mb-4">Connect With Us</h4>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-twitter text-xl"></i></a>
+                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-facebook text-xl"></i></a>
+                <a href="#" className="text-gray-600 hover:text-blue-500"><i className="fab fa-linkedin text-xl"></i></a>
               </div>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© 2025 HealthGuard AI. All rights reserved.</p>
+          <div className="mt-8 text-center text-gray-600">
+            <p>&copy; 2025 HealthGuard AI. All rights reserved.</p>
           </div>
-        </div>
-      </footer>
-
-      {/* Emergency Modal */}
-      {showEmergencyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-red-100 p-3">
-                  <i className="fas fa-exclamation-triangle text-xl text-red-600"></i>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800">Emergency Services</h3>
-              </div>
+        </footer>
+        {/* Auth Modal */}
+        {showAuth && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 relative">
               <button
-                onClick={() => setShowEmergencyModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                onClick={() => {
+                  setShowAuth(false);
+                  setFormData({ email: '', password: '', name: '' });
+                  setErrors({});
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
               >
                 <i className="fas fa-times text-xl"></i>
               </button>
-            </div>
-            <p className="text-gray-600 mb-6">
-              If you are experiencing a medical emergency, please call your local emergency services immediately:
-            </p>
-            <div className="bg-red-50 rounded-xl p-6 mb-6">
-              <div className="flex items-center gap-4 mb-4">
-                <i className="fas fa-phone-alt text-2xl text-red-600"></i>
-                <div>
-                  <p className="font-bold text-gray-800">Emergency Number</p>
-                  <p className="text-2xl font-bold text-red-600">911</p>
-                </div>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isLogin ? 'Log In' : 'Create Account'}
+                </h2>
+                <p className="text-gray-600 mt-2">
+                  {isLogin ? 'Log in to your account' : 'Join our healthcare community'}
+                </p>
               </div>
-              <p className="text-sm text-gray-600">
-                Available 24/7 for immediate medical assistance
-              </p>
-            </div>
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={() => setShowEmergencyModal(false)}
-                className="!rounded-button px-6 py-2 text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap"
-              >
-                Close
-              </button>
-              <button
-                className="!rounded-button bg-red-600 px-6 py-2 text-white hover:bg-red-700 transition-colors whitespace-nowrap"
-                onClick={() => window.location.href = 'tel:911'}
-              >
-                Call Emergency
-              </button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter your full name"
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your email"
+                  />
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your password"
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2 px-4 bg-blue-500 text-white !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors duration-200"
+                >
+                  {isLogin ? 'Log In' : 'Create Account'}
+                </button>
+                <div className="relative my-6 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 text-gray-500 bg-white">Or continue with</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    console.log('Google sign in');
+                    // Here you would implement Google OAuth
+                  }}
+                  className="w-full py-2 px-4 bg-white border border-gray-300 !rounded-button whitespace-nowrap hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <i className="fab fa-google text-[#4285f4]"></i>
+                  <span className="text-gray-700">Continue with Google</span>
+                </button>
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setFormData({ email: '', password: '', name: '' });
+                      setErrors({});
+                    }}
+                    className="text-blue-500 hover:text-blue-700 text-sm"
+                  >
+                    {isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
-
 const App: React.FC = () => {
   return (
     <Router>
@@ -272,5 +334,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
-
+export default App
