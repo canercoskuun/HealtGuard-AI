@@ -188,7 +188,7 @@ const Home: React.FC = () => {
               <ul className="space-y-2 text-gray-600">
                 <li><i className="fas fa-envelope mr-2"></i>support@healthguard.ai</li>
                 <li><i className="fas fa-phone mr-2"></i>+1 (800) HEALTH</li>
-                <li><i className="fas fa-map-marker-alt mr-2"></i>123 Innovation Drive, Silicon Valley, CA 94025</li>
+                <li><i className="fas fa-map-marker-alt mr-2"></i>Odunpazarı/Eskişehir</li>
               </ul>
             </div>
             <div>
