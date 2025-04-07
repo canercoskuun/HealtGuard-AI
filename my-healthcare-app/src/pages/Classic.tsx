@@ -198,7 +198,6 @@ const App: React.FC = () => {
                 .map((item: any, index: number) => ({
                     name: item.disease,
                     match: parseInt(item.probability),
-
                     description: item.description !== "No description" ? item.description : "No description available.",
                     severity:
                         index === 0 ? "High" :
@@ -281,7 +280,7 @@ const App: React.FC = () => {
                     </div>
                     <p className="text-xl text-gray-600">Enter your symptoms to get possible conditions</p>
                 </header>
-                <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <div className="bg-white rounded-lg shadow-lg p-8 mb-8 overflow-y-auto">
                     <div className="relative mb-6">
                         <div className="relative">
                             <input

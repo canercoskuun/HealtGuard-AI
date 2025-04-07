@@ -3,20 +3,20 @@ import joblib
 import numpy as np
 import pandas as pd
 from flask_cors import CORS
-
+import os
 app = Flask(__name__)
 CORS(app)
-
+print(os.listdir())
 # Model yükleniyor
-model = joblib.load('svc_disease_prediction_model.pkl')
+model = joblib.load('disease_prediction_model/svc_disease_prediction_model.pkl')
 
 # Description verisi
-ds=pd.read_csv('symptom_Description.csv')
+ds=pd.read_csv('disease_prediction_model/symptom_Description.csv')
 ds.index = ds['Disease']
 ds = ds.drop('Disease', axis=1)
 
 # Precaution verisi
-pr=pd.read_csv('symptom_precaution.csv')
+pr=pd.read_csv('disease_prediction_model/symptom_precaution.csv')
 pr = pr.fillna("")
 pr['precautions'] = ""
 
